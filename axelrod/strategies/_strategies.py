@@ -4,7 +4,7 @@ from .ann import EvolvedANN, EvolvedANN5, EvolvedANNNoise05
 from .apavlov import APavlov2006, APavlov2011
 from .appeaser import Appeaser
 from .averagecopier import AverageCopier, NiceAverageCopier
-from .axelrod_first import (Davis, Feld, Grofman, Joss, Nydegger,
+from .axelrod_first import (Davis, Feld, Graaskamp, Grofman, Joss, Nydegger,
                             RevisedDowning, Shubik, SteinAndRapoport,
                             TidemanAndChieruzzi, Tullock, UnnamedStrategy)
 from .axelrod_second import (Black, Borufsen, Cave, Champion, Colbert,
@@ -175,6 +175,7 @@ all_strategies = [
     GoByMajority40,
     GoByMajority5,
     Golden,
+    Graaskamp,
     GraaskampKatzen,
     Gradual,
     GradualKiller,

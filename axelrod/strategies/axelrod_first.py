@@ -7,7 +7,7 @@ from typing import Dict, List, Tuple
 
 from axelrod.action import Action
 from axelrod.player import Player
-from axelrod.random_ import random_choice
+from axelrod.random_ import random_choice, randrange
 from axelrod.strategy_transformers import FinalTransformer
 from scipy.stats import chisquare
 
@@ -204,6 +204,110 @@ class Feld(Player):
             return D
         p = self._cooperation_probability()
         return random_choice(p)
+
+
+class Graaskamp(Player):
+    """
+    Submitted to Axelrod's first tournament by Jim Graaskamp.
+
+    Play Tit for Tat for the first 50 rounds.
+    Defect on round 51.
+    Play 5 further rounds of Tit For Tat.
+    Check to see if the opponent is playing randomly, if so defect for the rest of the game.
+    Check to see if the opponent is playing Tit For Tat, if so play Tit For Tat.
+    Else cooperate and randomly defect every 5 to 15 moves.
+
+    This strategy came 9th in Axelrod's original tournament.
+
+    Names:
+
+    - Graaskamp: [Axelrod1980]_
+    """
+
+    name = "Graaskamp"
+    classifier = {
+        "memory_depth": float("inf"),
+        "stohastic": True,
+        "makes_use_of": set([]),
+        "long_run_time": False,
+        "inspects_source": False,
+        "manipulates_source": False,
+        "manipulates_state": False,
+    }
+
+    def __init__(self, alpha: float = 0.05):
+        """
+        Parameters
+        ----------
+        alpha: float
+            The significant level of p_value from chi-squared test with
+            alpha == 0.05 as default.
+        """
+        super().__init__()
+        self.mode = "Normal"
+        self.alpha = alpha
+        self.rand5to15 = randrange(5, 15)
+
+    def _titfortat(self, opponent: Player) -> Action:
+        # Implement the tit for tat strategy
+        if not self.history:
+            return C
+        if opponent.history[-1] == D:
+            return D
+        return C
+
+    def _stochastic(self) -> Action:
+        # Choose a random number between 5 and 15 and count down to 0
+        # While not 0 cooperate, when 0 defect and choose a new random number
+        # Basically defect randomly every 5 to 15 turns
+        if self.rand5to15 == 0:
+            self.rand5to15 = randrange(5,15)
+            return D
+        self.rand5to15 -= 1
+        return C
+
+    def _isopponenttft(self, opponent: Player) -> bool:
+        # Detect if the first round the opponent cooperate
+        # Detect for the rest of the rounds whether the opponent copied
+        # If either is broken return false, if never broken throughout history return true
+        for i in range(len(opponent.history)+1):
+            if i == 0 and opponent.history[i] == D:
+                return False
+            elif i == 0:
+                continue
+            if opponent.history[i] != self.history[i-1]:
+                return False
+        return True
+
+    def _isopponentrandom(self, opponent: Player) -> bool:
+        # Taken from Stein and Rapoport strategy (further down)
+        p_value = chisquare([opponent.cooperations, opponent.defections]).pvalue
+        return p_value >= self.alpha
+
+    def strategy(self, opponent: Player) -> Action:
+        # If the agent has previously detected that the opponent is neither random nor tit for tat
+        # this is detected further down in this method
+        if self.mode == "Stochastic":
+            return self._stochastic()
+        round_number = len(self.history) + 1
+        # Play tit for tat for 50 rounds and then round 52 to 57, mode will be set to "Tit For Tat" if it has
+        # been detected earlier
+        if self.mode == "Tit For Tat" or round_number <= 50 or (52 <= round_number <= 57):
+            return self._titfortat(opponent)
+        # Mode will be set to Defect if the opponent has previously been detected and a random strategy
+        if round_number == 51 or self.mode == "Defect":
+            return D
+        # Detect if opponent is random on round 58
+        if self._isopponentrandom(opponent):
+            self.mode == "Defect"
+            return D
+        # Detect if opponent is tit for tat on round 58
+        if self._isopponenttft(opponent):
+            self.mode = "Tit For Tat"
+            return self._titfortat(opponent)
+        # If neither tit for tat or random, set a stochastic strategy
+        self.mode = "Stochastic"
+        return self._stochastic()
 
 
 class Grofman(Player):

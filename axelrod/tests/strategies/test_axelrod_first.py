@@ -138,6 +138,32 @@ class TestFeld(TestPlayer):
         self.versus_test(axelrod.Defector(), expected_actions=actions)
 
 
+class TestGraaskamp(TestPlayer):
+
+    name = "Graaskamp"
+    player = axelrod.Graaskamp
+    expected_classifier = {
+        "memory_depth": float("inf"),
+        "stochastic": True,
+        "makes_use_of": set([]),
+        "long_run_time": False,
+        "inspects_source": False,
+        "manipulates_source": False,
+        "manipulates_state": False,
+    }
+
+    def test_strategy(self):
+        actions = [(C, C)] * 7
+        self.versus_test(axelrod.Cooperator(), expected_actions=actions)
+
+        actions = [(C, C), (C, D), (D, C), (C, D), (D, C)]
+        self.versus_test(axelrod.Alternator(), expected_actions=actions)
+
+        opponent = axelrod.MockPlayer(actions=[D]*8)
+        actions = [(C, D)] + ( [(D, D)] * 7 )
+        self.versus_test(opponent, expected_actions=actions)
+
+
 class TestGrofman(TestPlayer):
 
     name = "Grofman"
